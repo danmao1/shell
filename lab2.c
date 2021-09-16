@@ -22,42 +22,46 @@ int main(int argc, char **argv)
     while(1){
         printf("%s ", getcwd(wdir, 100));
 	    fgets(input, 256, stdin);
+         
         size_t len= strlen(input);
         if(input[len-1]=='\n'){
 		    input[--len]='\0';
         }
-        cmd=strtok(input, " ");
-        my_argv[0]=cmd;
+        cmd=strtok(input," ");
         if(strcmp(cmd,"cd")==0){
             
-           my_argv[1]=strtok(NULL," ");
-           chdir(my_argv[1]);
-        } 
-    }
-    fgets(buffer, bufferSize, stdin); // get initial input and 
-    buffer[strlen(buffer) - 1] = '\0'; // replace newline with null terminator
+            
+            my_argv[0]=cmd;
+            
+            my_argv[1]=strtok(NULL," ");
+            chdir(my_argv[1]);
+        }
+        else{
+            prog = strtok(input, " ( ");
+            int j = 0;
+            while(prog != NULL){
+                my_argv[j] = prog;
+                prog = strtok(NULL, " ");
+                j++;
+                printf("%s\n",my_argv[j]);
+            }
+            size_t length = sizeof(my_argv)/sizeof(my_argv[0]);
 
-    prog = strtok(buffer, " ( ");
-    int j = 0;
-    while(prog != NULL){
-        my_argv[j] = prog;
-        prog = strtok(NULL, " ");
-        j++;
-    }
-
-    size_t length = sizeof(my_argv)/sizeof(my_argv[0]);
-    char* cmd;
-    char* argus[15];
-    for (int i = 0; i < length; ++i)
-    {
-        int k = 0;
-        cmd = strtok(my_argv[i], " ");
-        while(cmd != NULL){
-            argus[k] = cmd;
-            cmd = strtok(NULL, " ");
-            k++;
+            char* argus[15];
+            for (int i = 0; i < length; ++i)
+            {
+                int k = 0;
+                cmd = strtok(my_argv[i], " ");
+                while(cmd != NULL){
+                    argus[k] = cmd;
+                    cmd = strtok(NULL, " ");
+                    printf("%s\n",cmd);
+                    k++;
+                }
+            }
         }
     }
-    returno 0;
+    
+    return 0;
     
 }
