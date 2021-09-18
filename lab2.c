@@ -37,29 +37,50 @@ int main(int argc, char **argv)
             chdir(my_argv[1]);
         }
         else{
+            int pipefd[2];
+            pipe(pipefd);
             prog = strtok(input, " ( ");
             int j = 0;
             while(prog != NULL){
                 my_argv[j] = prog;
-                prog = strtok(NULL, " ");
+                prog = strtok(NULL, " ( ");
                 j++;
-                printf("%s\n",my_argv[j]);
             }
             size_t length = sizeof(my_argv)/sizeof(my_argv[0]);
 
             char* argus[15];
+            char* str;
+            
             for (int i = 0; i < length; ++i)
             {
-                int k = 0;
-                cmd = strtok(my_argv[i], " ");
-                while(cmd != NULL){
-                    argus[k] = cmd;
-                    cmd = strtok(NULL, " ");
-                    printf("%s\n",cmd);
+                
+                int k = 1;
+                str = strtok(my_argv[i], " ");
+                argus[0] = str;
+                while(str != NULL){
+                    str = strtok(NULL, " ");
+                    argus[0]=str;
+                    
                     k++;
                 }
+                argus[k]='\0';
+                pid_t child=fork();
+                int oldfd;
+                if(child==0){
+                    oldfd=dup2(pipefd[0],STDOUT_FILENO);
+                    if( oldfd == -1 ){
+			            perror("could not dup2 pipe");
+			            exit(-1);
+                    }
+                    execvp(cmd,argus);
+                }
+                
+
+
             }
+    
         }
+        
     }
     
     return 0;
