@@ -38,7 +38,9 @@ int main(int argc, char **argv)
         }
         else{
             int pipefd[2];
-            pipe(pipefd);
+           if(pipe(pipefd)<0){
+               printf("\nPipe could not be initilized\n");
+           }
             prog = strtok(input, " ( ");
             int j = 0;
             while(prog != NULL){
@@ -50,31 +52,72 @@ int main(int argc, char **argv)
 
             char* argus[15];
             char* str;
-            
+            pid_t* fork_list[length];
+
             for (int i = 0; i < length; ++i)
             {
-                
+                int p=0;
                 int k = 1;
                 str = strtok(my_argv[i], " ");
                 argus[0] = str;
+                
                 while(str != NULL){
                     str = strtok(NULL, " ");
-                    argus[0]=str;
+                    argus[k]=str;
                     
                     k++;
                 }
                 argus[k]='\0';
-                pid_t child=fork();
+                fork_list[p]=fork();
                 int oldfd;
-                if(child==0){
-                    oldfd=dup2(pipefd[0],STDOUT_FILENO);
-                    if( oldfd == -1 ){
-			            perror("could not dup2 pipe");
-			            exit(-1);
-                    }
-                    execvp(cmd,argus);
+                if(fork_list[p]<0){
+                    printf("\ncould not fork\n");
                 }
+                if(fork_list[p]==0){
+                    
+                    close(pipefd[0]);
+                    dup2(pipefd[1],STDOUT_FILENO);
+                    close(pipefd[1]);
+                    int exec=execvp(cmd,argus);
+                    if (exec<0){
+                        printf("\nCould not execute command\n");
+                        exit(0);
+                    }
+
+                }
+                else{
+                    fork_list[p+1]=fork();
+                    if (fork_list[p+1]<0){
+                        printf("\n could not fork\n");
+                    }
+                    int k = 1;
+                    i++;
+                    str = strtok(my_argv[i], " ");
+                    argus[0] = str;
                 
+                    while(str != NULL){
+                        str = strtok(NULL, " ");
+                        argus[k]=str;
+                    
+                         k++;
+                    }
+                    if (fork_list[p+1]==0){
+                        close(pipefd[1]);
+                        dup2(pipefd[0], STDIN_FILENO);
+                        close(pipefd[0]);
+                        int exec=execvp(cmd,argus);
+                        if (exec<0){
+                            printf("\nCould not execute command\n");
+                            exit(0);
+                        }
+                    }
+                    else{
+                        waitpid(fork_list[p],NULL,0);
+                        waitpid(fork_list[p+1],NULL,0);
+
+                    }
+                }
+                p+=2;
 
 
             }
