@@ -1,0 +1,41 @@
+
+
+more ( cat ( ls
+
+more0( cat ( ls
+
+more0(0cat ( ls
+
+
+char* commands[15]; //Max 15 commands
+
+char* ret; 
+ret = strtok( input, "(" );
+commands[0] = ret;
+int i = 1;
+while( ret != NULL ){
+	ret = strtok( NULL, "(" ); 
+	commands[i] = ret;
+}
+
+i--;
+
+for( ; i >= 0; i-- ){
+	char* cmd;
+	char* my_argv[ max_myargv ];
+
+	//Parse on spaces
+	//Fill out cmd and my_argv
+	//fork()
+	//in child we can execvp() with cmd and my_argv
+	//parent goes back to top of loop
+}
+
+
+ls ( ls ( ls 
+
+
+
+
+
+
