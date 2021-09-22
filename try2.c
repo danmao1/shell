@@ -6,6 +6,13 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <string.h>
+void execPipe(char** command,char** pipedCommand){
+	int pipefd[2];
+	pid_t child1, child2;
+	pipe(pipefd);
+	
+}
+
 
 
 int  main(int argc, char* argv[]){
@@ -32,23 +39,38 @@ int  main(int argc, char* argv[]){
     		cmd = strtok(NULL, " ( ");
     		i++;
     	}
+		my_argv[i]='\0';
+		
 
   		//i think first pipe is created here
-    	for (i = i - 1; i >= 0; i--){ // tokenizing progs and args from commands from left to right 
+    	for (i = i - 1; i > 0; i--){ // tokenizing progs and args from commands from left to right 
     		char* curProg[17];
     		char* progName;
+			
 
     		int k = 0;
-    		progName = strtok(commands[i], " ");
+    		progName = strtok(my_argv[i], " ");
     		while (progName != NULL){
     			curProg[k] = progName;
+
+				
     			progName = strtok(NULL, " ");
     			k++;
     		}
+			
+			
+			curProg[k]='\0';
 
+			
+			
     		if (strcmp(curProg[0], "cd") == 0){ // built in commands
+
+				
     			chdir(curProg[1]);
-    		} else {
+				
+
+    		} 
+			else {
     			
     		}
     	}

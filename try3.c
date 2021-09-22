@@ -7,7 +7,7 @@
 #include <signal.h>
 #include <string.h>
 
-int parseByPipe(char input[], char* parsed[]){
+char* parseByPipe(char input[]){
 	int j = 0;
 	char* cmd = strtok(input, "(");
 	while( cmd != NULL ){
@@ -15,17 +15,19 @@ int parseByPipe(char input[], char* parsed[]){
 		cmd = strtok(NULL, "(");
 		j++;
 	}
-	return j;
+	return parsed;
 }
 
-void parseCmds( char* parsed, char* cmds[]){
+char* parseCmds( char* parsed){
 	int j = 0;
+	char* str=malloc(16);
 	char* cmd = strtok(parsed, " ");
 	while ( cmd != NULL ){
-		cmds[j] = cmd;
+		str[j]=cmd;
 		cmd = strtok(NULL, " ");
 		j++;
 	}
+	return str;
 }
 
 
@@ -35,7 +37,7 @@ int main( int argc, char* argv[] ){
 	char input[256];
 	char wdir[100];
 	signal(SIGINT,  NULL);
-
+	
 	while(1){
 
 		printf("%s>> ", getcwd(wdir, 100));
@@ -44,13 +46,14 @@ int main( int argc, char* argv[] ){
 
 		char* my_argv[16]; // max args is 15 + 1 for null terminator
 
-		int len = parseByPipe(input, my_argv);
-		for (int j = len - 1; j >= 0; j--){
+		my_argv= parseByPipe(input);
+		for (int j = my_argv.size() - 1; j >= 0; j--){									
 			char* cmds[15];
-			parseCmds(my_argv[j], cmds);
+			cmds=parseCmds(my_argv[j]);
 			if (strcmp(cmds[0], "cd") == 0){
 				chdir(cmds[1]);
 			}
+			printf("\n%s\n",cmds[j]);
 		}
 	}
 
