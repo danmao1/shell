@@ -8,22 +8,20 @@
 #include <signal.h>
 #include <string.h>
 #define bufferSize 200
-int main (int argc, char **argv){
-
-    char buffer[bufferSize];
-    fgets(buffer, bufferSize, stdin);
-    size_t len= strlen(buffer);
-    if(buffer[len-1]=='\n'){
-		buffer[--len]='\0';
-	}
-    char* comp1;
-    char* comp2;
-    comp1=strtok(buffer," ");
-    comp2=strtok(buffer," ");
-
-    printf("%s\n",comp1);
-    printf("%s\n",comp2);
-
-
-    return 0;
+int main () {
+   char str[80] = "This is - www.tutorialspoint.com - website";
+   const char s[2] = "-";
+   char *token;
+   
+   /* get the first token */
+   token = strtok(str, s);
+   
+   /* walk through other tokens */
+   while( token != NULL ) {
+      printf( " %s\n", token );
+    
+      token = strtok(NULL, s);
+   }
+   
+   return(0);
 }

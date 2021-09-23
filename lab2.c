@@ -9,7 +9,7 @@
 #include <signal.h>
 #include <string.h>
 
-int pipeExec(char cmd1[], pid_t fork, int p, int j, int oldpipe){
+int pipeExec(char cmd1[], pid_t fork_id, int p, int j, int oldpipe){
 
 	//Note, pipe only for beginning and middle processes of pipeline
 	int pipefd[2];
@@ -17,7 +17,7 @@ int pipeExec(char cmd1[], pid_t fork, int p, int j, int oldpipe){
 		printf("\nPipe could not be initilized\n");
 	}
 	if(p == 0){ //Starting process
-		if(fork==0){ //Child process
+		if(fork_id==0){ //Child process
 			close(pipefd[0]); //close read end
 			dup2(pipefd[1],STDOUT_FILENO); //redirect write end to stdout
 			//close(pipefd[1]); don't close this! Need write end of pipe
@@ -35,7 +35,7 @@ int pipeExec(char cmd1[], pid_t fork, int p, int j, int oldpipe){
 	else if( (p != 0) && (p != j-1) ){ //Middle process
 
 
-		if(fork == 0){ //Child process
+		if(fork_id == 0){ //Child process
 			close(pipefd[0]); //Close read end of pipe we just made
 			dup2( pipefd[1], STDOUT_FILENO );
 			dup2( oldpipe, STDIN_FILENO );
@@ -53,7 +53,7 @@ int pipeExec(char cmd1[], pid_t fork, int p, int j, int oldpipe){
 		}
 	} else if ( p == j-1 ){ //End process
 
-		if( fork == 0 ){ //Child process
+		if( fork_id == 0 ){ //Child process
 			dup2( oldpipe, STDIN_FILENO );
 			int exec=execvp(cmd1[0],cmd1);
 			if (exec<0){
@@ -63,7 +63,7 @@ int pipeExec(char cmd1[], pid_t fork, int p, int j, int oldpipe){
 		} else {
 			//Parent
 			close( oldpipe );
-			waitpid( fork, NULL, 0 );
+			waitpid( fork_id, NULL, 0 );
 		}
 	}
 
@@ -84,6 +84,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, NULL);
 	printf("%s ", getcwd(wdir, 100));
 	char* ret_val = fgets(input, 256, stdin);
+    pid_t fork_list[16];
 
 	int oldpipe = 0;
 
@@ -95,63 +96,52 @@ int main(int argc, char **argv)
 		if(input[len-1]=='\n'){
 			input[len-1]='\0';
 		}
-		cmd=strtok(input," ");
-		if(strcmp(cmd,"cd")==0){
+        char* commands[15]; //Max 15 commands
 
-			my_argv[0]=cmd;
+        char* ret; 
+        ret=strtok(input,"(");
+        commands[0] = ret;
+        int i = 1;
+        ret = strtok( NULL, "(" );
+        while( ret != NULL ){
+            commands[i] = ret;
+            ret = strtok( NULL, "(" ); 
+            
+            i++;
+        }
+        commands[i]='\0';
 
-			my_argv[1]=strtok(NULL," ");
-			chdir(my_argv[1]);
-		}
-		else{
-			pid_t* fork_list[16];
-			prog = strtok(input, " ( ");
-			int j = 0;
-			while(prog != NULL){
-				my_argv[j] = prog;
+        
 
-				prog = strtok(NULL, " ( ");
-				printf("\n%d\n",prog);
-				fork_list[j]=fork();
-
-				j++;
+        for(int j=0 ; j<i; j++ ){
+            char* cmd;
+            char* retParse;
+            retParse=strtok(commands[j]," ");
+            cmd=retParse;
+            my_argv[0]=cmd;
+            fork_list[j]=fork();
+            int k=1;
+            while(retParse!=NULL){
+                retParse=strtok(NULL," ");
+                my_argv[k]=retParse;
+                
+                k++;
+            }
+            my_argv[k]='\0';
+    
+            if (strcmp(cmd, "cd") == 0){
+				chdir(my_argv[1]);
 			}
+            else{
+                for (int p=0;p<i;p++){
 
-			my_argv[j]='\0';
-
-
-			char* argus[15];
-			char* str;
-
-
-			for (int i = 0; i < j; ++i)
-			{
-
-				int k = 1;
-				str = strtok(my_argv[i], " ");
-				argus[0] = str;
-
-				while(str != NULL){
-					str = strtok(NULL, " ");
-					argus[k]=str;
-
-					k++;
-				}
-				argus[k]='\0';
-				for (int p=0;p<j;p++){
-
-					oldpipe = pipeExec(argus[p],fork_list[p],argus[p+1],fork_list[p+1],p,j, oldpipe);
+					oldpipe = pipeExec(my_argv,fork_list[p],p,i, oldpipe);
 
 				}
-
-
-
-			}
-			printf("%s ", getcwd(wdir, 100));
-			ret_val = fgets(input, 256, stdin);
-		}
-
-
+            }
+        }
+        printf("%s ", getcwd(wdir, 100));
+		ret_val = fgets(input, 256, stdin);
 	}
 
 	return 0;
