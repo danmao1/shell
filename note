@@ -39,3 +39,175 @@ ls ( ls ( ls
 
 
 
+		/*cmd=strtok(input," ");
+		if(strcmp(cmd,"cd")==0){
+
+			my_argv[0]=cmd;
+
+			my_argv[1]=strtok(NULL," ");
+			chdir(my_argv[1]);
+		}
+		else{
+			pid_t* fork_list[16];
+			prog = strtok(input, " ( ");
+			int j = 0;
+			while(prog != NULL){
+				my_argv[j] = prog;
+
+				prog = strtok(NULL, " ( ");
+				printf("\n%d\n",prog);
+				fork_list[j]=fork();
+
+				j++;
+			}
+
+			my_argv[j]='\0';
+
+
+			char* argus[15];
+			char* str;
+
+
+			for (int i = 0; i < j; ++i)
+			{
+
+				int k = 1;
+				str = strtok(my_argv[i], " ");
+				argus[0] = str;
+
+				while(str != NULL){
+					str = strtok(NULL, " ");
+					argus[k]=str;
+
+					k++;
+				}
+				argus[k]='\0';
+				for (int p=0;p<j;p++){
+
+					oldpipe = pipeExec(argus[p],fork_list[p],p,j, oldpipe);
+
+				}
+
+
+
+			}
+			printf("%s ", getcwd(wdir, 100));
+			ret_val = fgets(input, 256, stdin);
+		}*/
+
+
+
+
+
+
+
+#include "closestpair.h"
+#include <algorithm>
+#include <cstdlib>
+#include <sys/time.h>  // used to seed srand for extra credit
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+Outcome brute(const vector<Point>& data) {
+    Outcome best(data[0], data[1], distSquared(data[0],data[1]));
+    for (unsigned int j=1; j < data.size(); j++) {
+        for (unsigned int k=0; k < j; k++) {
+            long long temp = distSquared(data[j], data[k]);
+            if (temp < best.dsq) {
+                best = Outcome(data[j], data[k], temp);
+            }
+        }
+    }
+    return best;
+}
+Outcome strip(vector <Point> strip,int size, Outcome d){
+	
+	long long min=d.dsq;
+	Outcome result=d;
+	for (int k=0;k<size;k++){
+		for (int l = k+1; l < size && (strip[l].y - strip[l].y) < min; l++){
+			if(distSquared(strip[l],strip[k]) < min){
+				long long dist=distSquared(strip[l],strip[k]);
+				result= Outcome(strip[l],strip[k],dist);
+			}
+		}
+
+	}
+	return result;
+
+
+
+}
+Outcome solve(const vector<Point>& dataX,vector<Point> dataY,int start,int stop){
+	int size=stop-start;
+	if(size<=3)
+		{
+		
+		return brute(dataX);
+		}
+	else
+	{   
+		
+
+		Outcome result;
+		Outcome dist;
+		int mid = size/2; // const or auto? some storage class not sure
+		Point middle=dataX[mid]; //middle point
+		Outcome distanceL= solve(dataX,dataY,0,mid);
+		Outcome distanceR= solve(dataX,dataY,mid+1,size);
+		
+		// ^couldnt we just use this to cut down till 3?
+		//split middle of array n/2 until 3 middle points to form strip	
+		if(distanceL.dsq>distanceR.dsq){
+			dist=distanceR;
+		}
+		else {
+			dist=distanceL;
+		}
+		//strip is minimum of left and right subarray
+		// ^ min does have a compare ability, should distanceSquared be used here?
+		vector <Point> close; //array that contains close points
+		int i=0;
+		for (int t=0;t<dataY.size();t++){
+			for (int j = start; j < stop-1; j++){
+			
+				if (abs(dataX[j].x - middle.x) < dist.dsq && dataY[t].y==dataX[j].y){
+					close.push_back(dataY[j]);
+					i++;
+				}
+			}
+	}
+		Outcome stripMin= strip(close,close.size(),dist);
+		if(dist.dsq>stripMin.dsq){
+			result=stripMin;
+		}
+		else {
+			result=dist;
+		}
+ 
+		
+		
+		return result;
+	}
+}
+Outcome efficient(const vector<Point>& data) {
+	
+	//sort x and y
+	vector<Point> datax(data);
+	sort(datax.begin(),datax.end(), compareByX);// x left to right
+
+	vector<Point> datay(data);
+	sort(datay.begin(),datay.end(), compareByY);// x left to right
+
+	
+	return solve(datax,datay,0,data.size());
+	
+	
+    
+}
+
+Outcome extra(const vector<Point>& data) {
+    return Outcome();
+}

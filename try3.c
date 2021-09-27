@@ -7,55 +7,165 @@
 #include <signal.h>
 #include <string.h>
 
-char* parseByPipe(char input[]){
-	int j = 0;
-	char* cmd = strtok(input, "(");
-	while( cmd != NULL ){
+int parseByPipe(char input[], char* parsed[]){
+    int j = 0;
+    char* cmd = strtok(input, "(");
+
+    while( cmd != NULL ){
+		
 		parsed[j] = cmd;
-		cmd = strtok(NULL, "(");
-		j++;
-	}
-	return parsed;
+        cmd = strtok(NULL, "(");
+    	j++;
+
+    }
+	parsed[j]='\0';
+    return j;
+
 }
 
-char* parseCmds( char* parsed){
-	int j = 0;
-	char* str=malloc(16);
-	char* cmd = strtok(parsed, " ");
-	while ( cmd != NULL ){
-		str[j]=cmd;
-		cmd = strtok(NULL, " ");
-		j++;
-	}
-	return str;
+ 
+
+int parseCmds( char* parsed, char* cmds[]){
+
+    int j = 0;
+
+    char* cmd = strtok(parsed, " ");
+
+    while ( cmd != NULL ){
+		cmds[j] = cmd;
+
+        cmd = strtok(NULL, " ");
+		if(cmd==NULL){
+			perror("Invalid null command");
+		}
+
+        j++;
+
+    }
+	cmds[j]='\0';
+
+    return j;
+
 }
 
+ 
 
+int pipeExec(char* cmd1[], pid_t fork_id, int p, int j, int oldpipe){
 
-int main( int argc, char* argv[] ){
-
-	char input[256];
-	char wdir[100];
-	signal(SIGINT,  NULL);
-	
-	while(1){
-
-		printf("%s>> ", getcwd(wdir, 100));
-		fgets(input, 256, stdin);
-		input[strlen(input) - 1] = '\0';
-
-		char* my_argv[16]; // max args is 15 + 1 for null terminator
-
-		my_argv= parseByPipe(input);
-		for (int j = my_argv.size() - 1; j >= 0; j--){									
-			char* cmds[15];
-			cmds=parseCmds(my_argv[j]);
-			if (strcmp(cmds[0], "cd") == 0){
-				chdir(cmds[1]);
+	//Note, pipe only for beginning and middle processes of pipeline
+	int pipefd[2];
+	if(pipe(pipefd)<0){
+		printf("\nPipe could not be initilized\n");
+	}
+	if(p == 0){ //Starting process
+		if(fork_id==0){ //Child process
+			close(pipefd[0]); //close read end
+			dup2(pipefd[1],STDOUT_FILENO); //redirect write end to stdout
+			//close(pipefd[1]); don't close this! Need write end of pipe
+			int exec=execvp(cmd1[0],cmd1);
+			if (exec<0){
+				perror("\nprog: Not found\n");
+				exit(0);
 			}
-			printf("\n%s\n",cmds[j]);
+		} else {
+			//Parent
+			close( pipefd[1] );
+
+		}
+	}            
+	else if( (p != 0) && (p != j-1) ){ //Middle process
+
+
+		if(fork_id == 0){ //Child process
+			close(pipefd[0]); //Close read end of pipe we just made
+			dup2( pipefd[1], STDOUT_FILENO );
+			dup2( oldpipe, STDIN_FILENO );
+			int exec=execvp(cmd1[0],cmd1);
+			if (exec<0){
+				perror("\nprog: Not found\n");
+				exit(0);
+			}
+		}
+
+		else{
+			//Parent
+			close( pipefd[1] );
+			close( oldpipe );
+		}
+	} else if ( p == j-1 ){ //End process
+
+		if( fork_id == 0 ){ //Child process
+			dup2( oldpipe, STDIN_FILENO );
+			int exec=execvp(cmd1[0],cmd1);
+			if (exec<0){
+				perror("\nprog: Not found\n");
+				exit(0);
+			}
+		} else {
+			//Parent
+			close( oldpipe );
+			waitpid( fork_id, NULL, 0 );
 		}
 	}
 
-	return 0;
+	return pipefd[0];
+
+}
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+int main( int argc, char* argv[] ){
+    char input[256];
+	char wdir[100];
+	int oldpipe = 0;
+	signal(SIGINT,  NULL);
+	printf("%s>> ", getcwd(wdir, 100));
+    char*  ret_val=fgets(input, 256, stdin);
+	
+	while(ret_val!=NULL){
+        
+        input[strlen(input) - 1] = '\0';
+		char* my_argv[16]; // max args is 15 + 1 for null terminator
+		int len = parseByPipe(input, my_argv);
+
+        for (int j = 0; j <len; j++){
+
+			char* cmds[15];
+			int numProgs = parseCmds(my_argv[j], cmds);
+			if (strcmp(cmds[0], "cd") == 0){
+				chdir(cmds[1]);
+			} 
+			else if (len==1){
+				int exec=execvp(cmds[0],cmds);
+				if (exec<0){
+					perror("\nprog: Not found\n");
+					exit(0);
+				}
+			}
+			else {	
+
+				for (int p = 0; p < len;p++){
+					pid_t id=fork();
+					oldpipe = pipeExec(cmds, id, p, len, oldpipe);
+
+				}
+
+			}
+		}
+		printf("%s>> ", getcwd(wdir, 100));
+    	ret_val=fgets(input, 256, stdin);
+		printf("\n");
+
+	}
+
+    return 0;
+
 }
