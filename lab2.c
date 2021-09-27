@@ -50,8 +50,8 @@ int parseCmds( char* parsed, char* cmds[]){
 
  
 
-int pipeExec(char* cmd1[], pid_t fork_id, int p, int j, int oldpipe){
-
+int pipeExec(char* cmd1[], int p, int j, int oldpipe){
+	pid_t fork_id=fork();
 	//Note, pipe only for beginning and middle processes of pipeline
 	int pipefd[2];
 	if(pipe(pipefd)<0){
@@ -157,14 +157,15 @@ int main( int argc, char* argv[] ){
 			else {	
 
 				for (int p = 0; p < len;p++){
-					pid_t id=fork();
-					oldpipe = pipeExec(cmds, id, p, len, oldpipe);
+					oldpipe = pipeExec(cmds, p, len, oldpipe);
 
 				}
 
 			}
 		}
-		printf("%s>> ", getcwd(wdir, 100));
+		getcwd(wdir, 100);
+		result=wdir + strlen(env)+1;
+		printf("%s>> ", result);
     	ret_val=fgets(input, 256, stdin);
 		printf("\n");
 
