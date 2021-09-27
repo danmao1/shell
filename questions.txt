@@ -1,0 +1,6 @@
+1. Sean Gerty & Daniel Mao
+
+
+2. The program does not work after a piping commands.
+
+3. Yes, we tried to do the extra credit

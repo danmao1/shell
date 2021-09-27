@@ -35,7 +35,7 @@ int parseCmds( char* parsed, char* cmds[]){
 		cmds[j] = cmd;
 
         cmd = strtok(NULL, " ");
-		if(cmd==NULL){
+		if(cmd==NULL && j>1){
 			perror("Invalid null command");
 		}
 
@@ -125,9 +125,13 @@ int pipeExec(char* cmd1[], pid_t fork_id, int p, int j, int oldpipe){
 int main( int argc, char* argv[] ){
     char input[256];
 	char wdir[100];
+	char* env;
 	int oldpipe = 0;
 	signal(SIGINT,  NULL);
-	printf("%s>> ", getcwd(wdir, 100));
+	env=getenv("HOME");
+	getcwd(wdir, 100);
+	char* result=wdir + strlen(env)+1;
+	printf("slush|%s> ", result);
     char*  ret_val=fgets(input, 256, stdin);
 	
 	while(ret_val!=NULL){
