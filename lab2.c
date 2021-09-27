@@ -165,7 +165,7 @@ int main( int argc, char* argv[] ){
 		}
 		getcwd(wdir, 100);
 		result=wdir + strlen(env)+1;
-		printf("%s>> ", result);
+		printf("slush|%s> ", result);
     	ret_val=fgets(input, 256, stdin);
 		printf("\n");
 
