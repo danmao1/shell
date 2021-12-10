@@ -7,6 +7,19 @@
 #include <signal.h>
 #include <string.h>
 
+//GRADING NOTE - Program exits after each single command, -5 points,
+// but does not exit after pipeline commands, and continues to
+// process commands, some working, but some not. However, the individual
+// commands appear to work correctly.
+
+// +5 extra credit
+
+//GRADING NOTE - Runs simple commands "ls"
+//GRADING NOTE - Runs simple commands with arguments "ls -l"
+//GRADING NOTE - Runs pipelined commands "cat ( ls"
+//GRADING NOTE - Runs pipelined commands with arguments "grep dferry ( ps aux"
+//GRADING NOTE - Runs complex commands "grep slush ( sort ( ls -l -h"
+
 int parseByPipe(char input[], char* parsed[]){
     int j = 0;
     char* cmd = strtok(input, "(");
